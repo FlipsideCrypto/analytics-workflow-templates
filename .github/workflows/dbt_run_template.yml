@@ -7,6 +7,9 @@ on:
         type: string
         description: 'dbt commands to run'
         required: true
+      environment:
+        type: string
+        description: 'github environment to get configuration values'
 
 env:
   DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
@@ -24,7 +27,7 @@ jobs:
   run_dbt_jobs:
     runs-on: ubuntu-latest
     environment: 
-      name: "${{ secrets.GITHUB_ENVIRONMENT }}"
+      name: "${{ inputs.environment }}"
     strategy:
       matrix:
         command: ${{fromJson(inputs.dbt_command)}}
