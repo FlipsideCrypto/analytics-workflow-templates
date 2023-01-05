@@ -9,24 +9,22 @@ on:
         required: true
 
 env:
-  DBT_PROFILES_DIR: ./
+  DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
 
   ACCOUNT: "${{ secrets.ACCOUNT }}"
   ROLE: "${{ secrets.ROLE }}"
   USER: "${{ secrets.USER }}"
   PASSWORD: "${{ secrets.PASSWORD }}"
   REGION: "${{ secrets.REGION }}"
-  DATABASE_DEV: "${{ secrets.DATABASE_DEV }}"
-  DATABASE_PROD: "${{ secrets.DATABASE_PROD }}"
-  WAREHOUSE_DEV: "${{ secrets.WAREHOUSE_DEV }}"
-  WAREHOUSE_PROD: "${{ secrets.WAREHOUSE_PROD }}"
+  DATABASE: "${{ secrets.DATABASE }}"
+  WAREHOUSE: "${{ secrets.WAREHOUSE }}"
   SCHEMA: "${{ secrets.SCHEMA }}"
 
 jobs:
   run_dbt_jobs:
     runs-on: ubuntu-latest
     environment: 
-      name: workflow
+      name: "${{ secrets.GITHUB_ENVIRONMENT }}"
     strategy:
       matrix:
         command: ${{fromJson(inputs.dbt_command)}}
@@ -40,7 +38,7 @@ jobs:
 
       - name: install dependencies
         run: |
-          pip3 install dbt-snowflake cli_passthrough requests click
+          pip3 install dbt-snowflake==${{ secrets.DBT_VERSION }} cli_passthrough requests click
           dbt deps
       - name: Run DBT Jobs
         run: |
