@@ -10,6 +10,10 @@ on:
       environment:
         type: string
         description: 'github environment to get configuration values'
+      warehouse:
+        type: string
+        description: 'dbt warehouse'
+        default: "${{ secrets.WAREHOUSE }}"
 
 env:
   DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
@@ -20,7 +24,7 @@ env:
   PASSWORD: "${{ secrets.PASSWORD }}"
   REGION: "${{ secrets.REGION }}"
   DATABASE: "${{ secrets.DATABASE }}"
-  WAREHOUSE: "${{ secrets.WAREHOUSE }}"
+  WAREHOUSE: "${{ inputs.warehouse }}"
   SCHEMA: "${{ secrets.SCHEMA }}"
 
 jobs:
