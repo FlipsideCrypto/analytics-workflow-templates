@@ -10,9 +10,11 @@ on:
       environment:
         type: string
         description: 'github environment to get configuration values'
+        required: true
       warehouse:
         type: string
         description: 'dbt warehouse'
+        required: true
 
 env:
   DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
