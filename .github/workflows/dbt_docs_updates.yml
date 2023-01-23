@@ -9,10 +9,8 @@ env:
   USER: "${{ secrets.USER }}"
   PASSWORD: "${{ secrets.PASSWORD }}"
   REGION: "${{ secrets.REGION }}"
-  DATABASE_DEV: "${{ secrets.DATABASE_DEV }}"
-  DATABASE_PROD: "${{ secrets.DATABASE_PROD }}"
-  WAREHOUSE_DEV: "${{ secrets.WAREHOUSE_DEV }}"
-  WAREHOUSE_PROD: "${{ secrets.WAREHOUSE_PROD }}"
+  DATABASE: "${{ secrets.DATABASE }}"
+  WAREHOUSE: "${{ secrets.WAREHOUSE }}"
   SCHEMA: "${{ secrets.SCHEMA }}"
 
 jobs:
@@ -29,7 +27,7 @@ jobs:
 
       - name: install dependencies
         run: |
-          pip install dbt-snowflake
+          pip install dbt-snowflake==${{ secrets.DBT_VERSION }}
           dbt deps
 
       - name: checkout docs branch
