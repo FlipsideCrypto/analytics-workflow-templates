@@ -78,11 +78,10 @@ Note that you can also right-click on models to interactively filter and explore
 
 
 ### **More information**
-- [Flipside](https://flipsidecrypto.xyz/earn)
+- [Flipside](https://flipsidecrypto.xyz/)
 - [Velocity](https://app.flipsidecrypto.com/velocity?nav=Discover)
 - [Tutorials](https://docs.flipsidecrypto.com/our-data/tutorials)
 - [Github]( <REPO_LINK> )
-- [Query Editor Shortcuts](https://docs.flipsidecrypto.com/velocity/query-editor-shortcuts)
 - [What is dbt?](https://docs.getdbt.com/docs/introduction)
 
 {% enddocs %}
