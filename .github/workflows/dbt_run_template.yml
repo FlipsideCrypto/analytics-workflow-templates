@@ -55,6 +55,11 @@ jobs:
         run: |
           pip3 install dbt-snowflake==${{ env.DBT_VERSION_VAR }} cli_passthrough requests click
           dbt deps
+
+      - name: log dbt debug
+        run: |
+          dbt debug
+
       - name: Run DBT Jobs
         run: |
           ${{ inputs.dbt_command }}
