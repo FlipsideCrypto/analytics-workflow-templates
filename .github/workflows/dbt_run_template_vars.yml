@@ -18,7 +18,6 @@ on:
 
 env:
   DBT_PROFILES_DIR: "${{ vars.DBT_PROFILES_DIR }}"
-  DBT_VERSION: ${{ if secrets.DBT_VERSION == '' }}"{{ vars.DBT_VERSION }}"${{ else }}"${{ secrets.DBT_VERSION }}"${{ end }}
   ACCOUNT: "${{ vars.ACCOUNT }}"
   ROLE: "${{ vars.ROLE }}"
   USER: "${{ vars.USER }}"
@@ -35,6 +34,9 @@ jobs:
       name: ${{ inputs.environment }}
 
     steps:
+      - name: Set env
+        run: |
+          echo "DBT_VERSION=${{ if secrets.DBT_VERSION == '' }}"{{ vars.DBT_VERSION }}"${{ else }}"${{ secrets.DBT_VERSION }}"${{ end }}" >> $GITHUB_ENV
       - uses: actions/checkout@v3
 
       - uses: actions/setup-python@v1
