@@ -18,7 +18,7 @@ on:
 
 env:
   DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
-
+  DBT_VERSION: "${{ secrets.DBT_VERSION }}"
   ACCOUNT: "${{ secrets.ACCOUNT }}"
   ROLE: "${{ secrets.ROLE }}"
   USER: "${{ secrets.USER }}"
@@ -27,7 +27,7 @@ env:
   DATABASE: "${{ secrets.DATABASE }}"
   WAREHOUSE: "${{ inputs.warehouse }}"
   SCHEMA: "${{ secrets.SCHEMA }}"
-
+  
 jobs:
   run_dbt_jobs:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
 
       - name: install dependencies
         run: |
-          pip3 install dbt-snowflake==${{ secrets.DBT_VERSION }} cli_passthrough requests click
+          pip3 install dbt-snowflake==${{ env.DBT_VERSION }} cli_passthrough requests click
           dbt deps
       - name: Run DBT Jobs
         run: |
