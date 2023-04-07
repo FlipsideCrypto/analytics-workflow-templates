@@ -41,7 +41,7 @@ env:
   
 jobs:
   run_dbt_jobs_secrets:
-    if: ${{ vars.DATABASE == '' }}
+    if: ${{ secrets.DATABASE != '' }}
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
