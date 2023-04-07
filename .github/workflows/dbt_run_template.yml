@@ -54,11 +54,15 @@ jobs:
       - name: install dependencies
         run: |
           pip3 install dbt-snowflake==${{ env.DBT_VERSION_VAR }} cli_passthrough requests click
-          dbt deps
 
       - name: log dbt debug
         run: |
           dbt debug
+
+                  
+      - name: dbt dependencies
+        run: |
+          dbt deps
 
       - name: Run DBT Jobs
         run: |
@@ -67,7 +71,7 @@ jobs:
   run_dbt_jobs_secrets:
     if: |
       always() &&
-      github.job.run_dbt_jobs_vars.result == 'failure'
+      github.job.run_dbt_jobs_vars.result == 'failure' || github.job.run_dbt_jobs_vars.result == 'skipped'
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
