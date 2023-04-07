@@ -42,7 +42,7 @@ env:
   
 jobs:
   run_dbt_jobs_vars:
-    if: github.env.USE_VARS == 'TRUE'
+    if: vars.USE_VARS == 'TRUE'
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
