@@ -40,27 +40,8 @@ env:
   WAREHOUSE: "${{ inputs.warehouse }}"
   
 jobs:
-  run_dbt_jobs_secrets:
-    if: ${{ secrets.DATABASE != '' }}
-    runs-on: ubuntu-latest
-    environment: 
-      name: ${{ inputs.environment }}
-
-    steps:
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.7.x"
-
-      - name: install dependencies
-        run: |
-          pip3 install dbt-snowflake==${{ env.DBT_VERSION }} cli_passthrough requests click
-          dbt deps
-      - name: Run DBT Jobs
-        run: |
-          ${{ inputs.dbt_command }}
-
   run_dbt_jobs_vars:
-    if: ${{ vars.DATABASE != '' }}
+    if: vars.DATABASE != ''
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
@@ -77,3 +58,23 @@ jobs:
       - name: Run DBT Jobs
         run: |
           ${{ inputs.dbt_command }}
+
+  run_dbt_jobs_secrets:
+    if: github.job.run_dbt_jobs_vars.result == 'skipped'
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.7.x"
+
+      - name: install dependencies
+        run: |
+          pip3 install dbt-snowflake==${{ env.DBT_VERSION }} cli_passthrough requests click
+          dbt deps
+      - name: Run DBT Jobs
+        run: |
+          ${{ inputs.dbt_command }}
+        
