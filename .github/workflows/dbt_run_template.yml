@@ -41,7 +41,7 @@ env:
   
 jobs:
   run_dbt_jobs_vars:
-    if: vars.DATABASE != ''
+    if: github.env.DATABASE_VAR != ''
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
