@@ -42,7 +42,6 @@ env:
   
 jobs:
   run_dbt_jobs_vars:
-    if: vars.USE_VARS == 'TRUE'
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
@@ -61,7 +60,9 @@ jobs:
           ${{ inputs.dbt_command }}
 
   run_dbt_jobs_secrets:
-    if: github.job.run_dbt_jobs_vars.result == 'skipped'
+    if: |
+      always() &&
+      github.job.run_dbt_jobs_vars.result == 'failure'
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
