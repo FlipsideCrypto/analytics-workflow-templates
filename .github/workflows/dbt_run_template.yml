@@ -40,6 +40,35 @@ env:
   WAREHOUSE: "${{ inputs.warehouse }}"
   
 jobs:
+  dump_vars:
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ inputs.environment }}
+    steps:
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.7.x"
+
+      - name: log all env vars
+        run: |
+          echo "DBT_PROFILES_DIR: $DBT_PROFILES_DIR"
+          echo "DBT_VERSION: $DBT_VERSION"
+          echo "ACCOUNT: $ACCOUNT"
+          echo "ROLE: $ROLE"
+          echo "USER: $USER"
+          echo "REGION: $REGION"
+          echo "DATABASE: $DATABASE"
+          echo "SCHEMA: $SCHEMA"
+          echo "WAREHOUSE: $WAREHOUSE"
+          echo "DBT_PROFILES_DIR_VAR: $DBT_PROFILES_DIR_VAR"
+          echo "DBT_VERSION_VAR: $DBT_VERSION_VAR"
+          echo "ACCOUNT_VAR: $ACCOUNT_VAR"
+          echo "ROLE_VAR: $ROLE_VAR"
+          echo "USER_VAR: $USER_VAR"
+          echo "REGION_VAR: $REGION_VAR"
+          echo "DATABASE_VAR: $DATABASE_VAR"
+          echo "SCHEMA_VAR: $SCHEMA_VAR"
+
   run_dbt_jobs_vars:
     if: github.env.DATABASE_VAR != ''
     runs-on: ubuntu-latest
