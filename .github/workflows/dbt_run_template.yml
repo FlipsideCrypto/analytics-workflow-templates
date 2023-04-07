@@ -42,14 +42,14 @@ jobs:
       - name: overwrite env vars
         if: ${{ env.USE_VARS == 'TRUE' }}
         run: |
-          echo "DBT_VERSION: ${{ vars.DBT_VERSION }}" >> $GITHUB_ENV
-          echo "ACCOUNT: ${{ vars.ACCOUNT }}" >> $GITHUB_ENV
-          echo "ROLE: ${{ vars.ROLE }}" >> $GITHUB_ENV
-          echo "USER: ${{ vars.USER }}" >> $GITHUB_ENV
-          echo "REGION: ${{ vars.REGION }}" >> $GITHUB_ENV
-          echo "DATABASE: ${{ vars.DATABASE }}" >> $GITHUB_ENV
-          echo "SCHEMA: ${{ vars.SCHEMA }}" >> $GITHUB_ENV
-          echo "WAREHOUSE: ${{ vars.WAREHOUSE }}" >> $GITHUB_ENV
+          echo "DBT_VERSION= ${{ vars.DBT_VERSION }}" >> $GITHUB_ENV
+          echo "ACCOUNT= ${{ vars.ACCOUNT }}" >> $GITHUB_ENV
+          echo "ROLE= ${{ vars.ROLE }}" >> $GITHUB_ENV
+          echo "USER= ${{ vars.USER }}" >> $GITHUB_ENV
+          echo "REGION= ${{ vars.REGION }}" >> $GITHUB_ENV
+          echo "DATABASE= ${{ vars.DATABASE }}" >> $GITHUB_ENV
+          echo "SCHEMA= ${{ vars.SCHEMA }}" >> $GITHUB_ENV
+          echo "WAREHOUSE= ${{ vars.WAREHOUSE }}" >> $GITHUB_ENV
 
       - uses: actions/setup-python@v1
         with:
