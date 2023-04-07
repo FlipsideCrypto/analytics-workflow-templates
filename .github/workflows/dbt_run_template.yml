@@ -49,7 +49,6 @@ jobs:
           echo "REGION=${{ vars.REGION }}" >> $GITHUB_ENV
           echo "DATABASE=${{ vars.DATABASE }}" >> $GITHUB_ENV
           echo "SCHEMA=${{ vars.SCHEMA }}" >> $GITHUB_ENV
-          echo "WAREHOUSE=${{ vars.WAREHOUSE }}" >> $GITHUB_ENV
       
       - name: log all env vars
         run: |
@@ -85,26 +84,3 @@ jobs:
       - name: Run DBT Jobs
         run: |
           ${{ inputs.dbt_command }}
-    
-  dump_vars:
-    runs-on: ubuntu-latest
-    environment: 
-      name: ${{ inputs.environment }}
-    steps:
-      - uses: actions/setup-python@v1
-        with:
-          python-version: "3.7.x"
-
-      - name: log all env vars
-        run: |
-          echo "USE_VARS: $USE_VARS"
-          echo "DBT_PROFILES_DIR: $DBT_PROFILES_DIR"
-
-          echo "DBT_VERSION: $DBT_VERSION"
-          echo "ACCOUNT: $ACCOUNT"
-          echo "ROLE: $ROLE"
-          echo "USER: $USER"
-          echo "REGION: $REGION"
-          echo "DATABASE: $DATABASE"
-          echo "SCHEMA: $SCHEMA"
-          echo "WAREHOUSE: $WAREHOUSE"
