@@ -25,25 +25,54 @@ env:
   PASSWORD: "${{ secrets.PASSWORD }}"
   REGION: "${{ secrets.REGION }}"
   DATABASE: "${{ secrets.DATABASE }}"
-  WAREHOUSE: "${{ inputs.warehouse }}"
   SCHEMA: "${{ secrets.SCHEMA }}"
+
+  DBT_PROFILES_DIR_VAR: "${{ vars.DBT_PROFILES_DIR }}"
+  DBT_VERSION_VAR: "${{ vars.DBT_VERSION }}"
+  ACCOUNT_VAR: "${{ vars.ACCOUNT }}"
+  ROLE_VAR: "${{ vars.ROLE }}"
+  USER_VAR: "${{ vars.USER }}"
+  PASSWORD_VAR: "${{ vars.PASSWORD }}"
+  REGION_VAR: "${{ vars.REGION }}"
+  DATABASE_VAR: "${{ vars.DATABASE }}"
+  SCHEMA_VAR: "${{ vars.SCHEMA }}"
+
+  WAREHOUSE: "${{ inputs.warehouse }}"
   
 jobs:
-  run_dbt_jobs:
+  run_dbt_jobs_secrets:
+    if: ${{ vars.DATABASE == '' }}
     runs-on: ubuntu-latest
     environment: 
       name: ${{ inputs.environment }}
 
     steps:
-      - uses: actions/checkout@v3
-
       - uses: actions/setup-python@v1
         with:
           python-version: "3.7.x"
 
       - name: install dependencies
         run: |
-          pip3 install dbt-snowflake==1.3.0 cli_passthrough requests click
+          pip3 install dbt-snowflake==${{ env.DBT_VERSION }} cli_passthrough requests click
+          dbt deps
+      - name: Run DBT Jobs
+        run: |
+          ${{ inputs.dbt_command }}
+
+  run_dbt_jobs_vars:
+    if: ${{ vars.DATABASE != '' }}
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/setup-python@v1
+        with:
+          python-version: "3.7.x"
+
+      - name: install dependencies
+        run: |
+          pip3 install dbt-snowflake==${{ env.DBT_VERSION_VAR }} cli_passthrough requests click
           dbt deps
       - name: Run DBT Jobs
         run: |
