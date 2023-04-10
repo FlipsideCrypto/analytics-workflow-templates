@@ -18,7 +18,7 @@ on:
 
 env:
   USE_VARS: "${{ vars.USE_VARS }}"
-
+  DBT_VERSION: "${{ secrets.DBT_VERSION }}"
   DBT_PROFILES_DIR: "${{ secrets.DBT_PROFILES_DIR }}"
   ACCOUNT: "${{ secrets.ACCOUNT }}"
   ROLE: "${{ secrets.ROLE }}"
