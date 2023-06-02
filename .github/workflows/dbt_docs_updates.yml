@@ -79,4 +79,5 @@ jobs:
 
       - name: refresh ddl for datashare
         run: |
+          dbt deps
           cnt=$(dbt ls -m fsc_utils.datashare._datashare___create_gold | wc -l ); if [ $cnt -eq 1 ]; then dbt run -m fsc_utils.datashare._datashare___create_gold; fi; 
