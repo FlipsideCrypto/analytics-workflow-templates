@@ -1,10 +1,7 @@
 name: docs_update
 
 on:
-  push:
-    branches:
-      - "main"
-
+  workflow_call:
 
 env:
   USE_VARS: "${{ vars.USE_VARS }}"
@@ -18,7 +15,6 @@ env:
   DATABASE: "${{ vars.DATABASE }}"
   WAREHOUSE: "${{ vars.WAREHOUSE }}"
   SCHEMA: "${{ vars.SCHEMA }}"
-
 
 
 jobs:
