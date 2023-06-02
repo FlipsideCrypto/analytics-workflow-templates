@@ -47,6 +47,10 @@ jobs:
         run: |
           pip install dbt-snowflake==${{ vars.DBT_VERSION }}
           dbt deps
+      
+      - name: refresh ddl for datashare
+        run: |
+          cnt=$(dbt ls -m fsc_utils.datashare._datashare___create_gold | wc -l ); if [ $cnt -eq 1 ]; then dbt run -m fsc_utils.datashare._datashare___create_gold; fi; 
 
       - name: checkout docs branch
         run: |
@@ -77,6 +81,4 @@ jobs:
         run: |
           git push -f --set-upstream origin docs
 
-      - name: refresh ddl for datashare
-        run: |
-          cnt=$(dbt ls -m fsc_utils.datashare._datashare___create_gold | wc -l ); if [ $cnt -eq 1 ]; then dbt run -m fsc_utils.datashare._datashare___create_gold; fi; 
+      
