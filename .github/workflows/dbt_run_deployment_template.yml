@@ -22,7 +22,7 @@ env:
   PASSWORD: "${{ secrets.PASSWORD }}"
   REGION: "${{ vars.REGION }}"
   DATABASE: "${{ vars.DATABASE }}"
-  WAREHOUSE: "${{ vars.WAREHOUSE }}"
+  WAREHOUSE: "${{ inputs.warehouse }}"
   SCHEMA: "${{ vars.SCHEMA }}"
 
   WAREHOUSE: "${{ inputs.warehouse }}"
