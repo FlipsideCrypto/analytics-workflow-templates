@@ -1,7 +1,16 @@
-name: docs_update
+name: dbt_run_deployment_template
 
 on:
   workflow_call:
+    inputs:
+      dbt_command:
+        type: string
+        description: 'dbt commands to run'
+        required: true
+      warehouse:
+        type: string
+        description: 'dbt warehouse'
+        required: true
 
 env:
   USE_VARS: "${{ vars.USE_VARS }}"
@@ -16,13 +25,13 @@ env:
   WAREHOUSE: "${{ vars.WAREHOUSE }}"
   SCHEMA: "${{ vars.SCHEMA }}"
 
+  WAREHOUSE: "${{ inputs.warehouse }}"
 
 jobs:
-  scheduled_run:
-    name: docs_update
+  run_dbt_jobs:
     runs-on: ubuntu-latest
     environment: 
-      name: workflow_prod
+      name: ${{ inputs.environment }}
 
     steps:
       - uses: actions/checkout@v3
@@ -30,7 +39,7 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: "3.7.x"
-      
+
       - name: overwrite env vars
         if: ${{ env.USE_VARS == 'TRUE' }}
         run: |
@@ -42,43 +51,15 @@ jobs:
           echo "REGION=${{ vars.REGION }}" >> $GITHUB_ENV
           echo "DATABASE=${{ vars.DATABASE }}" >> $GITHUB_ENV
           echo "SCHEMA=${{ vars.SCHEMA }}" >> $GITHUB_ENV
-
+        
       - name: install dependencies
         run: |
-          pip install dbt-snowflake==${{ vars.DBT_VERSION }}
+          pip3 install dbt-snowflake==${{ env.DBT_VERSION }} cli_passthrough requests click
           dbt deps
+      - name: Run DBT Jobs
+        run: |
+          ${{ inputs.dbt_command }}
       
-      - name: refresh ddl for datashare
+      - name: Run datashare model
         run: |
           cnt=$(dbt ls -m fsc_utils.datashare._datashare___create_gold | wc -l ); if [ $cnt -eq 1 ]; then dbt run -m fsc_utils.datashare._datashare___create_gold; fi; 
-
-      - name: checkout docs branch
-        run: |
-          git checkout -B docs origin/main
-
-      - name: generate dbt docs
-        run: dbt docs generate -t prod
-
-      - name: move files to docs directory
-        run: |
-          mkdir -p ./docs
-          cp target/{catalog.json,manifest.json,index.html} docs/
-      - name: clean up target directory
-        run: dbt clean
-
-      - name: check for changes
-        run: git status
-
-      - name: stage changed files
-        run: git add .
-
-      - name: commit changed files
-        run: |
-          git config user.email "abc@xyz"
-          git config user.name "github-actions"
-          git commit -am "Auto-update docs"
-      - name: push changes to docs
-        run: |
-          git push -f --set-upstream origin docs
-
-      
