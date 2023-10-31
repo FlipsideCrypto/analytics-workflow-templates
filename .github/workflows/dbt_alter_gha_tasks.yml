@@ -29,9 +29,6 @@ env:
   SCHEMA: "${{ vars.SCHEMA }}"
   WAREHOUSE: "${{ vars.WAREHOUSE }}"
 
-concurrency:
-  group: ${{ github.workflow }}
-
 jobs:
   run_dbt_jobs:
     runs-on: ubuntu-latest
