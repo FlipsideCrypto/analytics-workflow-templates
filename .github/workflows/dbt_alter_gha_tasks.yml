@@ -1,0 +1,59 @@
+name: dbt_alter_gha_tasks
+
+on:
+  workflow_call:
+    inputs:
+      workflow_name:
+        type: string
+        description: 'Name of the workflow to perform the action on, no .yml extension'
+        required: true
+      task_action:
+        type: string
+        description: 'Action to perform'
+        required: true
+      environment:
+        type: string
+        description: 'Environment to run the workflow in'
+        required: true
+
+env:
+  USE_VARS: "${{ vars.USE_VARS }}"
+  DBT_VERSION: "${{ vars.DBT_VERSION }}"
+  DBT_PROFILES_DIR: "${{ vars.DBT_PROFILES_DIR }}"
+  ACCOUNT: "${{ vars.ACCOUNT }}"
+  ROLE: "${{ vars.ROLE }}"
+  USER: "${{ vars.USER }}"
+  PASSWORD: "${{ secrets.PASSWORD }}"
+  REGION: "${{ vars.REGION }}"
+  DATABASE: "${{ vars.DATABASE }}"
+  SCHEMA: "${{ vars.SCHEMA }}"
+  WAREHOUSE: "${{ vars.WAREHOUSE }}"
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  run_dbt_jobs:
+    runs-on: ubuntu-latest
+    environment: 
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+       
+      - name: install dependencies
+        run: |
+          pip3 install -r requirements.txt
+          dbt deps
+
+      - name: Set up workflow name
+        run: echo "WORKFLOW_NAME_UPPER=$(echo '${{ inputs.workflow_name }}' | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+
+      - name: Run DBT Jobs
+        run: |
+          dbt run-operation fsc_utils.alter_gha_task --args '{ "task_name": "TRIGGER_${{ env.WORKFLOW_NAME_UPPER }}", "task_action": "${{ inputs.task_action }}" }'
