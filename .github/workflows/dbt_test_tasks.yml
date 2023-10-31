@@ -1,0 +1,43 @@
+name: dbt_test_tasks
+
+on:
+  workflow_call:
+
+env:
+  USE_VARS: "${{ vars.USE_VARS }}"
+  DBT_VERSION: "${{ vars.DBT_VERSION }}"
+  DBT_PROFILES_DIR: "${{ vars.DBT_PROFILES_DIR }}"
+  ACCOUNT: "${{ vars.ACCOUNT }}"
+  ROLE: "${{ vars.ROLE }}"
+  USER: "${{ vars.USER }}"
+  PASSWORD: "${{ secrets.PASSWORD }}"
+  REGION: "${{ vars.REGION }}"
+  DATABASE: "${{ vars.DATABASE }}"
+  SCHEMA: "${{ vars.SCHEMA }}"
+  WAREHOUSE: "${{ vars.WAREHOUSE }}"
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  run_dbt_jobs:
+    runs-on: ubuntu-latest
+    environment: 
+      name: workflow_prod
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+        
+      - name: install dependencies
+        run: |
+          pip install -r requirements.txt
+          dbt deps
+
+      - name: Run DBT Jobs
+        run: |
+          dbt test -m models/github_actions/github_actions__current_task_status.sql
