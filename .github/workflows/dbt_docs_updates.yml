@@ -57,7 +57,7 @@ jobs:
           git checkout -B docs origin/main
 
       - name: generate dbt docs
-        run: dbt docs generate -t prod
+        run: dbt docs generate --exclude livequery_models fsc_utils -t prod
 
       - name: move files to docs directory
         run: |
