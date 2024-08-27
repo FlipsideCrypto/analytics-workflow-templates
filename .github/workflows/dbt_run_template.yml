@@ -15,6 +15,11 @@ on:
         type: string
         description: 'dbt warehouse'
         required: true
+      python_version:
+        type: string
+        description: 'python version'
+        required: true
+        default: "3.7.x"
 
 env:
   USE_VARS: "${{ vars.USE_VARS }}"
@@ -41,7 +46,7 @@ jobs:
 
       - uses: actions/setup-python@v1
         with:
-          python-version: "3.8.x"
+          python-version: ${{ inputs.python_version }}
 
       - name: overwrite env vars
         if: ${{ env.USE_VARS == 'TRUE' }}
