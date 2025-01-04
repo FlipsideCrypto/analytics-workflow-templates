@@ -27,10 +27,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v1
         with:
-          python-version: "3.10"
-          cache: "pip"
+          python-version: "3.7.x"
       
       - name: overwrite env vars
         if: ${{ env.USE_VARS == 'TRUE' }}
