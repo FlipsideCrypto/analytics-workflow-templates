@@ -1,0 +1,101 @@
+name: run_vault_secrets
+run-name: ${{ inputs.project_name }} - Run Vault Secrets
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        type: string
+        description: 'Project name (used to create the Snowflake users and AWS secrets)'
+        required: true
+  workflow_call:
+    inputs:
+      project_name:
+        type: string
+        description: 'Project name (used to create the Snowflake users and AWS secrets)'
+        required: true
+    secrets:
+      EXTERNAL_CI_BOT_SSH_PRIVATE_KEY:
+        required: true
+      EXTERNAL_CI_BOT_SSH_KNOWN_HOSTS:
+        required: true
+      EXTERNAL_CI_ACCESS_KEY:
+        required: true
+      EXTERNAL_CI_SECRET_KEY:
+        required: true
+      SERVERLESS_STG_EXECUTION_ROLE_ARN:
+        required: true
+      VAULT_URL:
+        required: true
+      VAULT_ROLE_ID:
+        required: true
+      VAULT_SECRET_ID:
+        required: true
+
+jobs:
+  run_vault_secrets:
+    runs-on: ubuntu-latest
+    environment:
+      name: workflow_dev
+    steps:
+      - name: Configure SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          if_key_exists: replace
+          key: "${{ secrets.EXTERNAL_CI_BOT_SSH_PRIVATE_KEY }}"
+          known_hosts: "${{ secrets.EXTERNAL_CI_BOT_SSH_KNOWN_HOSTS }}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: "${{ secrets.EXTERNAL_CI_ACCESS_KEY }}"
+          aws-region: "${{ vars.REGION }}"
+          aws-secret-access-key: "${{ secrets.EXTERNAL_CI_SECRET_KEY }}"
+          mask-aws-account-id: false
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+          role-to-assume: ${{ secrets.SERVERLESS_STG_EXECUTION_ROLE_ARN }}
+
+      - name: Authenticate with Vault
+        id: vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ secrets.VAULT_URL }}
+          method: approle
+          roleId: ${{ secrets.VAULT_ROLE_ID }}
+          secretId: ${{ secrets.VAULT_SECRET_ID }}
+          namespace: admin
+          exportToken: true
+          outputToken: true
+
+      - name: Get DBT Cloud Secret from Vault
+        id: get_dbt_cloud
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ secrets.VAULT_URL }}
+          method: token
+          token: ${{ env.VAULT_TOKEN }}
+          namespace: admin
+          secrets: |
+            analytics/data/prod/snowflake_users/dbt_cloud_${{ inputs.project_name }} password | DBT_CLOUD_PASSWORD
+            analytics/data/prod/snowflake_users/dbt_cloud_${{ inputs.project_name }} username | DBT_CLOUD_USERNAME
+
+      - name: Get Lambda API Secret from Vault
+        id: get_lambda_api
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ secrets.VAULT_URL }}
+          method: token
+          token: ${{ env.VAULT_TOKEN }}
+          namespace: admin
+          secrets: |
+            analytics/data/prod/snowflake/snowflake-api-${{ inputs.project_name }} password | LAMBDA_API_PASSWORD
+            analytics/data/prod/snowflake/snowflake-api-${{ inputs.project_name }} username | LAMBDA_API_USERNAME
+
+      - name: Set outputs
+        id: set_outputs
+        run: |
+          echo "::set-output name=dbt_cloud_username::${{ steps.get_dbt_cloud.outputs.DBT_CLOUD_USERNAME }}"
+          echo "::set-output name=dbt_cloud_password::${{ steps.get_dbt_cloud.outputs.DBT_CLOUD_PASSWORD }}"
+          echo "::set-output name=lambda_api_username::${{ steps.get_lambda_api.outputs.LAMBDA_API_USERNAME }}"
+          echo "::set-output name=lambda_api_password::${{ steps.get_lambda_api.outputs.LAMBDA_API_PASSWORD }}"
