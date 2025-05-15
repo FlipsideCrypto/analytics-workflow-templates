@@ -65,7 +65,6 @@ jobs:
           namespace: admin
           secrets: |
             analytics/data/prod/snowflake_users/dbt_cloud_${{ inputs.project_name }} password | DBT_CLOUD_PASSWORD
-            analytics/data/prod/snowflake_users/dbt_cloud_${{ inputs.project_name }} username | DBT_CLOUD_USERNAME
 
       - name: Get Lambda API Secret from Vault
         id: get_lambda_api
@@ -82,7 +81,6 @@ jobs:
       - name: Set outputs
         id: set_outputs
         run: |
-          echo "::set-output name=dbt_cloud_username::${{ steps.get_dbt_cloud.outputs.DBT_CLOUD_USERNAME }}"
           echo "::set-output name=dbt_cloud_password::${{ steps.get_dbt_cloud.outputs.DBT_CLOUD_PASSWORD }}"
           echo "::set-output name=lambda_api_username::${{ steps.get_lambda_api.outputs.LAMBDA_API_USERNAME }}"
           echo "::set-output name=lambda_api_password::${{ steps.get_lambda_api.outputs.LAMBDA_API_PASSWORD }}"
