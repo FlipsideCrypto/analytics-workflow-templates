@@ -35,8 +35,6 @@ on:
 jobs:
   run_vault_secrets:
     runs-on: ubuntu-latest
-    environment:
-      name: workflow_dev
     steps:
       - name: Configure SSH
         uses: shimataro/ssh-key-action@v2
@@ -44,17 +42,6 @@ jobs:
           if_key_exists: replace
           key: "${{ secrets.EXTERNAL_CI_BOT_SSH_PRIVATE_KEY }}"
           known_hosts: "${{ secrets.EXTERNAL_CI_BOT_SSH_KNOWN_HOSTS }}"
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: "${{ secrets.EXTERNAL_CI_ACCESS_KEY }}"
-          aws-region: "${{ vars.REGION }}"
-          aws-secret-access-key: "${{ secrets.EXTERNAL_CI_SECRET_KEY }}"
-          mask-aws-account-id: false
-          role-duration-seconds: 3600
-          role-skip-session-tagging: true
-          role-to-assume: ${{ secrets.SERVERLESS_STG_EXECUTION_ROLE_ARN }}
 
       - name: Authenticate with Vault
         id: vault
