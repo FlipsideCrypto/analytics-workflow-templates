@@ -1,7 +1,7 @@
 ---
 name: dbt-job-failure-investigator
 description: Use this agent when a dbt job has failed and you need to systematically investigate the root cause and determine next steps for resolution. This agent follows the documented investigation process to analyze failures, check dependencies, review logs, and provide actionable recommendations. Examples: <example>Context: A scheduled dbt job failed overnight and needs investigation. user: 'The daily dbt run failed this morning with multiple model errors' assistant: 'I'll use the dbt-job-failure-investigator agent to systematically analyze this failure and determine the root cause' <commentary>Since there's a dbt job failure that needs investigation, use the dbt-job-failure-investigator agent to follow the documented process for analyzing the failure.</commentary></example> <example>Context: User notices test failures in their dbt pipeline. user: 'Several dbt tests are failing after the latest deployment' assistant: 'Let me launch the dbt-job-failure-investigator agent to investigate these test failures systematically' <commentary>Test failures in dbt require systematic investigation using the documented process, so use the dbt-job-failure-investigator agent.</commentary></example>
-tools: Bash, Glob, Grep, LS, Read, Edit, MultiEdit, Write, NotebookRead, NotebookEdit, WebFetch, TodoWrite, WebSearch, git, Snow, dbt, gh, mcp__zen__chat, mcp__zen__thinkdeep, mcp__zen__planner, mcp__zen__consensus, mcp__zen__codereview, mcp__zen__precommit, mcp__zen__debug, mcp__zen__secaudit, mcp__zen__docgen, mcp__zen__analyze, mcp__zen__refactor, mcp__zen__tracer, mcp__zen__testgen, mcp__zen__challenge, mcp__zen__listmodels, mcp__zen__version, mcp__flipside__search_knowledge, mcp__flipside__use_knowledge, mcp__flipside__find_workflow, mcp__flipside__plan_workflow, mcp__flipside__create_workflow_template, mcp__flipside__update_workflow_template, mcp__flipside__get_workflow_template, mcp__flipside__list_workflow_templates, mcp__flipside__get_workflow_execution, mcp__flipside__update_workflow_execution, mcp__flipside__analyze_score_data, mcp__flipside__run_sql_query, mcp__flipside__create_metrics_query, mcp__flipside__find_tables, mcp__flipside__find_tables_by_name, mcp__flipside__get_table_schema, mcp__flipside__get_sql_query_results, mcp__flipside__get_latest_trending_topics, mcp__flipside__search_web, mcp__flipside__get_knowledge_by_id
+tools: Bash, Glob, Grep, LS, Read, Edit, MultiEdit, Write, NotebookRead, NotebookEdit, WebFetch, TodoWrite, WebSearch, git, Snow, dbt, gh
 model: sonnet
 color: orange
 ---
@@ -131,7 +131,8 @@ With the GitHub Actions information gathered, prepare for the next phase:
 ### 2.1 Find Recent Failed Queries
 Use the Snow CLI to search for failed queries related to the job:
 
-```sql
+```shell
+snow sql -q "
 -- Search for failed queries by user and time
 SELECT 
     query_id,
@@ -147,12 +148,14 @@ WHERE user_name = 'DBT_CLOUD_<PROJECT>'
     AND start_time >= DATEADD(hour, -2, CURRENT_TIMESTAMP())
 ORDER BY start_time DESC
 LIMIT 10;
+"
 ```
 
 ### 2.2 Search by Error Pattern
 If searching by user doesn't yield results, search by error pattern:
 
-```sql
+```shell
+snow sql -q "
 -- Search for specific error types
 SELECT 
     query_id,
@@ -166,6 +169,7 @@ WHERE error_message ILIKE '%<ERROR_PATTERN>%'
     AND start_time >= DATEADD(day, -1, CURRENT_TIMESTAMP())
 ORDER BY start_time DESC
 LIMIT 10;
+"
 ```
 
 ### 2.3 Extract Failed SQL
@@ -177,7 +181,7 @@ LIMIT 10;
 
 ### 3.1 Locate the Model File
 dbt models follow the naming convention: `<schema>__<table_name>.sql`
-- Example: `NEAR.SILVER.BURROW_REPAYS` → `models/silver/defi/lending/burrow/silver__burrow_repays.sql`
+- Example: `NEAR.SILVER.TABLE_ABC` → `models/silver/../silver__table_abc.sql`
 
 ### 3.2 Review Model Configuration
 Examine the model's dbt configuration:
@@ -202,7 +206,8 @@ Examine the model's dbt configuration:
 ### 4.1 Reconstruct the Failed Query
 Based on the dbt model logic, recreate the SQL that would generate the temporary table or final result:
 
-```sql
+```shell
+snow sql -q "
 -- Example: Recreate the logic that caused the failure
 WITH [CTEs from the model]
 SELECT 
@@ -213,6 +218,7 @@ FROM [final CTE]
 GROUP BY [all fields except count]
 HAVING COUNT(*) > 1
 ORDER BY duplicate_count DESC;
+"
 ```
 
 ### 4.2 Identify Root Cause
