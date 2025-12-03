@@ -53,7 +53,10 @@ jobs:
         FORCE_REFRESH="${{ inputs.force_refresh }}"
 
         # URL-encode parameters to handle special characters
-        RESOURCE_ID_ENCODED=$(printf %s "$RESOURCE_ID" | jq -sRr @uri)
+        if ! RESOURCE_ID_ENCODED=$(printf %s "$RESOURCE_ID" | jq -sRr @uri); then
+          echo "❌ Failed to encode resource_id"
+          exit 1
+        fi
 
         # Format force_refresh parameter
         if [ "${{ inputs.force_refresh }}" = "true" ]; then
