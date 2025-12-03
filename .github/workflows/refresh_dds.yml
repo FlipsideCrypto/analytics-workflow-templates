@@ -68,10 +68,12 @@ jobs:
         echo "Refreshing cache for resource: $RESOURCE_ID"
         echo "API URL: $API_URL"
 
+        # Common headers for API calls
+        API_HEADERS=(-H "X-API-Key: ${{ secrets.DDS_API_KEY }}" -H "Content-Type: application/json")
+
         # Make the API call and capture both response and HTTP status
         RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/api/v1/cache/refresh?resource_id=$RESOURCE_ID_ENCODED$FORCE_PARAM" \
-          -H "X-API-Key: ${{ secrets.DDS_API_KEY }}" \
-          -H "Content-Type: application/json")
+          "${API_HEADERS[@]}")
         
         # Split response and status code
         HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
@@ -118,8 +120,7 @@ jobs:
 
                 # Get job status
                 STATUS_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/api/v1/cache/jobs?job_id=$JOB_ID" \
-                  -H "X-API-Key: ${{ secrets.DDS_API_KEY }}" \
-                  -H "Content-Type: application/json")
+                  "${API_HEADERS[@]}")
 
                 STATUS_HTTP_CODE=$(echo "$STATUS_RESPONSE" | tail -n1)
                 STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
