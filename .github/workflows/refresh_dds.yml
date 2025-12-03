@@ -50,10 +50,17 @@ jobs:
       run: |
         RESOURCE_ID="${{ needs.determine-resource-id.outputs.resource_id }}"
         API_URL="${{ inputs.api_url }}"
-        FORCE_PARAM="${{ inputs.force_refresh }}"
+        FORCE_REFRESH="${{ inputs.force_refresh }}"
 
         # URL-encode parameters to handle special characters
         RESOURCE_ID_ENCODED=$(printf %s "$RESOURCE_ID" | jq -sRr @uri)
+
+        # Format force_refresh parameter
+        if [ "${{ inputs.force_refresh }}" = "true" ]; then
+          FORCE_PARAM="&force_refresh=true"
+        else
+          FORCE_PARAM=""
+        fi
 
         echo "Refreshing cache for resource: $RESOURCE_ID"
         echo "API URL: $API_URL"
