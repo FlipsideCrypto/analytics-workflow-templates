@@ -1,5 +1,5 @@
 name: 'Refresh DDS Cache'
-
+run-name: ${{ inputs.resource_id }} - Refresh DDS Cache
 on:
   workflow_call:
     inputs:
