@@ -1,11 +1,11 @@
 name: 'Refresh DDS Cache'
-run-name: ${{ inputs.resource_id }} - Refresh DDS Cache
+run-name: ${{ inputs.resource_id || github.event.repository.name }} - Refresh DDS Cache
 on:
   workflow_call:
     inputs:
       resource_id:
         description: 'The resource ID to refresh'
-        required: true
+        required: false
         type: string
       api_url:
         description: 'The DDS API URL (defaults to staging)'
@@ -23,14 +23,32 @@ on:
         required: true
 
 jobs:
+  determine-resource-id:
+    runs-on: ubuntu-latest
+    outputs:
+      resource_id: ${{ steps.set-resource-id.outputs.resource_id }}
+    steps:
+      - name: Set resource ID
+        id: set-resource-id
+        run: |
+          if [ -n "${{ inputs.resource_id }}" ]; then
+            echo "resource_id=${{ inputs.resource_id }}" >> $GITHUB_OUTPUT
+          else
+            # Extract repo name from github.repository (format: owner/repo-name)
+            REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+            echo "resource_id=$REPO_NAME" >> $GITHUB_OUTPUT
+          fi
+          echo "Using resource_id: $(cat $GITHUB_OUTPUT | grep resource_id | cut -d'=' -f2)"
+
   refresh-cache:
+    needs: determine-resource-id
     runs-on: ubuntu-latest
     environment: workflow_secrets
     steps:
     - name: Refresh cache
       shell: bash
       run: |
-        RESOURCE_ID="${{ inputs.resource_id }}"
+        RESOURCE_ID="${{ needs.determine-resource-id.outputs.resource_id }}"
         API_URL="${{ inputs.api_url }}"
         FORCE_PARAM="${{ inputs.force_refresh }}"
 
