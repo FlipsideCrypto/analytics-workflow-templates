@@ -109,9 +109,9 @@ jobs:
               echo ""
               echo "⏳ Polling job status..."
 
-              MAX_ATTEMPTS=30
+              MAX_ATTEMPTS=30      # Poll for up to 5 minutes (30 attempts × 10 seconds)
               ATTEMPT=0
-              POLL_INTERVAL=10
+              POLL_INTERVAL=10     # Wait 10 seconds between status checks
 
               while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
                 ATTEMPT=$((ATTEMPT + 1))
