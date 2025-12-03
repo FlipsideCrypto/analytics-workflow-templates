@@ -156,6 +156,7 @@ jobs:
               if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
                 echo "⚠️  Job polling timed out after $((MAX_ATTEMPTS * POLL_INTERVAL)) seconds"
                 echo "💡 Job is still running. Check status manually with job_id: $JOB_ID"
+                exit 1
               fi
             fi
 
