@@ -1,0 +1,178 @@
+name: 'Refresh DDS Cache'
+run-name: ${{ inputs.resource_id || github.event.repository.name }} - Refresh DDS Cache
+on:
+  workflow_call:
+    inputs:
+      resource_id:
+        description: 'The resource ID to refresh'
+        required: false
+        type: string
+      api_url:
+        description: 'The DDS API URL (defaults to staging)'
+        required: false
+        type: string
+        default: 'https://dds-api.fsc-data-platform-stg.io'
+      force_refresh:
+        description: 'Force refresh the cache'
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      DDS_API_KEY:
+        description: 'The DDS API key'
+        required: true
+
+jobs:
+  determine-resource-id:
+    runs-on: ubuntu-latest
+    outputs:
+      resource_id: ${{ steps.set-resource-id.outputs.resource_id }}
+    steps:
+      - name: Set resource ID
+        id: set-resource-id
+        run: |
+          if [ -n "${{ inputs.resource_id }}" ]; then
+            echo "resource_id=${{ inputs.resource_id }}" >> $GITHUB_OUTPUT
+          else
+            # Extract repo name from github.repository (format: owner/repo-name)
+            REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+            echo "resource_id=$REPO_NAME" >> $GITHUB_OUTPUT
+          fi
+          echo "Using resource_id: $(cat $GITHUB_OUTPUT | grep resource_id | cut -d'=' -f2)"
+
+  refresh-cache:
+    needs: determine-resource-id
+    runs-on: ubuntu-latest
+    environment: workflow_secrets
+    steps:
+    - name: Refresh cache
+      shell: bash
+      run: |
+        RESOURCE_ID="${{ needs.determine-resource-id.outputs.resource_id }}"
+        API_URL="${{ inputs.api_url }}"
+        FORCE_REFRESH="${{ inputs.force_refresh }}"
+
+        # URL-encode parameters to handle special characters
+        if ! RESOURCE_ID_ENCODED=$(printf %s "$RESOURCE_ID" | jq -sRr @uri); then
+          echo "❌ Failed to encode resource_id"
+          exit 1
+        fi
+
+        # Format force_refresh parameter
+        if [ "${{ inputs.force_refresh }}" = "true" ]; then
+          FORCE_PARAM="&force_refresh=true"
+        else
+          FORCE_PARAM=""
+        fi
+
+        echo "Refreshing cache for resource: $RESOURCE_ID"
+        echo "API URL: $API_URL"
+
+        # Common headers for API calls
+        API_HEADERS=(-H "X-API-Key: ${{ secrets.DDS_API_KEY }}" -H "Content-Type: application/json")
+
+        # Make the API call and capture both response and HTTP status
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/api/v1/cache/refresh?resource_id=$RESOURCE_ID_ENCODED$FORCE_PARAM" \
+          "${API_HEADERS[@]}")
+        
+        # Split response and status code
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+        RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+        
+        echo "HTTP Status: $HTTP_STATUS"
+        echo "Response: $RESPONSE_BODY"
+        
+        # Check for success
+        if [ "$HTTP_STATUS" -eq 200 ]; then
+          # Check if response indicates success
+          if echo "$RESPONSE_BODY" | grep -q '"success":true'; then
+            echo ""
+            echo "✅ Cache refresh successful!"
+            echo "📊 Resource: $RESOURCE_ID"
+
+            # Extract and display key information from the response
+            JOB_ID=$(echo "$RESPONSE_BODY" | jq -r '.job_id // empty')
+            if [ -n "$JOB_ID" ]; then
+              echo "🔑 Job ID: $JOB_ID"
+            fi
+
+            STATUS=$(echo "$RESPONSE_BODY" | jq -r '.status // empty')
+            if [ -n "$STATUS" ]; then
+              echo "📊 Status: $STATUS"
+            fi
+
+            MESSAGE=$(echo "$RESPONSE_BODY" | jq -r '.message // empty')
+            if [ -n "$MESSAGE" ]; then
+              echo "📝 Message: $MESSAGE"
+            fi
+
+            # Poll job status if job_id is available
+            if [ -n "$JOB_ID" ]; then
+              echo ""
+              echo "⏳ Polling job status..."
+
+              MAX_ATTEMPTS=30      # Poll for up to 5 minutes (30 attempts × 10 seconds)
+              ATTEMPT=0
+              POLL_INTERVAL=10     # Wait 10 seconds between status checks
+
+              while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+                ATTEMPT=$((ATTEMPT + 1))
+
+                # Get job status
+                STATUS_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_URL/api/v1/cache/jobs?job_id=$JOB_ID" \
+                  "${API_HEADERS[@]}")
+
+                STATUS_HTTP_CODE=$(echo "$STATUS_RESPONSE" | tail -n1)
+                STATUS_BODY=$(echo "$STATUS_RESPONSE" | head -n -1)
+
+                if [ "$STATUS_HTTP_CODE" -ne 200 ]; then
+                  echo "⚠️  Failed to get job status (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+                  continue
+                fi
+
+                JOB_STATUS=$(echo "$STATUS_BODY" | jq -r '.job.status // empty')
+                echo "📊 Job status (attempt $ATTEMPT/$MAX_ATTEMPTS): $JOB_STATUS"
+
+                # Check if job is complete
+                if [ "$JOB_STATUS" = "completed" ]; then
+                  echo "✅ Job completed successfully!"
+                  break
+                elif [ "$JOB_STATUS" = "failed" ]; then
+                  JOB_ERROR=$(echo "$STATUS_BODY" | jq -r '.job.error // empty')
+                  echo "❌ Job failed: $JOB_ERROR"
+                  exit 1
+                elif [ "$JOB_STATUS" = "running" ] || [ "$JOB_STATUS" = "pending" ]; then
+                  # Job still in progress, sleep before next attempt
+                  if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                    sleep $POLL_INTERVAL
+                  fi
+                  continue
+                else
+                  echo "⚠️  Unknown job status: $JOB_STATUS"
+                  exit 1
+                fi
+              done
+
+              if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo "⚠️  Job polling timed out after $((MAX_ATTEMPTS * POLL_INTERVAL)) seconds"
+                echo "💡 Job is still running. Check status manually with job_id: $JOB_ID"
+                exit 1
+              fi
+            fi
+
+            echo ""
+          else
+            # Check for error field in response
+            ERROR_MSG=$(echo "$RESPONSE_BODY" | jq -r '.error // empty')
+            if [ -n "$ERROR_MSG" ]; then
+              echo "❌ API returned error: $ERROR_MSG"
+            else
+              echo "❌ API returned error: $RESPONSE_BODY"
+            fi
+            exit 1
+          fi
+        else
+          echo "❌ HTTP request failed with status $HTTP_STATUS"
+          echo "Response: $RESPONSE_BODY"
+          exit 1
+        fi
