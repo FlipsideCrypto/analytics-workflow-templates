@@ -38,6 +38,9 @@ jobs:
         with:
           python-version: "3.7.x"
 
+      - name: Configure git for internal repos
+        run: git config --global url."https://x-access-token:${{ secrets.GH_INTERNAL_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: install dependencies
         run: |
           pip3 install dbt-snowflake cli_passthrough requests click
