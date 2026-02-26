@@ -24,6 +24,7 @@ env:
   ROLE: "${{ vars.ROLE }}"
   USER: "${{ vars.USER }}"
   PASSWORD: "${{ secrets.PASSWORD }}"
+  PRIVATE_KEY: "${{ secrets.PRIVATE_KEY }}"
   REGION: "${{ vars.REGION }}"
   DATABASE: "${{ vars.DATABASE }}"
   SCHEMA: "${{ vars.SCHEMA }}"
