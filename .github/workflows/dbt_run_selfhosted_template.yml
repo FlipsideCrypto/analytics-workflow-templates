@@ -1,0 +1,159 @@
+name: dbt_run_selfhosted_template
+
+on:
+  workflow_call:
+    inputs:
+      dbt_command:
+        type: string
+        description: 'dbt commands to run'
+        required: true
+      environment:
+        type: string
+        description: 'github environment to get configuration values'
+        required: false
+        default: 'workflow_prod'
+      runner:
+        type: string
+        description: 'self-hosted runner label'
+        required: false
+        default: 'cluster-ops-prod'
+      timeout_minutes:
+        type: number
+        description: 'timeout for the dbt job in minutes'
+        required: false
+        default: 90
+      container_image:
+        type: string
+        description: 'container image for self-hosted runner'
+        required: false
+        default: 'ghcr.io/catthehacker/ubuntu:act-latest'
+    secrets:
+      GH_INTERNAL_TOKEN:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
+
+env:
+  DBT_PROFILES_DIR: ${{ vars.DBT_PROFILES_DIR }}
+  ACCOUNT: "${{ vars.ACCOUNT }}"
+  ROLE: "${{ vars.ROLE }}"
+  USER: "${{ vars.USER }}"
+  PASSWORD: "${{ secrets.PASSWORD }}"
+  PRIVATE_KEY: "${{ secrets.PRIVATE_KEY }}"
+  REGION: "${{ vars.REGION }}"
+  DATABASE: "${{ vars.DATABASE }}"
+  WAREHOUSE: "${{ vars.WAREHOUSE }}"
+  SCHEMA: "${{ vars.SCHEMA }}"
+
+jobs:
+  run_dbt_jobs:
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
+    container:
+      image: ${{ inputs.container_image }}
+    environment:
+      name: ${{ inputs.environment }}
+    outputs:
+      started: ${{ steps.mark-started.outputs.started }}
+
+    steps:
+      - name: Mark job as started
+        id: mark-started
+        run: echo "started=true" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Configure git for internal repos
+        run: git config --global url."https://x-access-token:${{ secrets.GH_INTERNAL_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: install dependencies
+        run: |
+          pip install -r requirements.txt
+          dbt deps
+
+      - name: Run DBT Jobs
+        run: |
+          ${{ inputs.dbt_command }}
+
+      - name: Store logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dbt-logs
+          path: |
+            logs
+            target
+
+  run_dbt_jobs_fallback:
+    needs: [run_dbt_jobs]
+    if: failure() && needs.run_dbt_jobs.outputs.started != 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Configure git for internal repos
+        run: git config --global url."https://x-access-token:${{ secrets.GH_INTERNAL_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: install dependencies
+        run: |
+          pip install -r requirements.txt
+          dbt deps
+
+      - name: Run DBT Jobs
+        run: |
+          ${{ inputs.dbt_command }}
+
+      - name: Store logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dbt-logs-fallback
+          path: |
+            logs
+            target
+
+  notify-failure:
+    needs: [run_dbt_jobs, run_dbt_jobs_fallback]
+    if: |
+      always() && (
+        (needs.run_dbt_jobs.result == 'failure' && needs.run_dbt_jobs.outputs.started == 'true') ||
+        needs.run_dbt_jobs_fallback.result == 'failure'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              \"text\": \"Failure in ${{ github.repository }}\",
+              \"attachments\": [{
+                \"color\": \"#f44336\",
+                \"fields\": [
+                  {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
+                  {\"title\": \"Workflow\", \"value\": \"${{ github.workflow }}\", \"short\": true}
+                ],
+                \"actions\": [{
+                  \"type\": \"button\",
+                  \"text\": \"View Workflow Run\",
+                  \"style\": \"primary\",
+                  \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+                }],
+                \"footer\": \"GitHub Actions\"
+              }]
+            }" \
+            "$SLACK_WEBHOOK_URL"
