@@ -31,7 +31,7 @@ on:
       GH_INTERNAL_TOKEN:
         required: true
       SLACK_WEBHOOK_URL:
-        required: true
+        required: false
 
 env:
   DBT_PROFILES_DIR: ${{ vars.DBT_PROFILES_DIR }}
@@ -106,36 +106,3 @@ jobs:
       - name: Run DBT Jobs
         run: |
           ${{ inputs.dbt_command }}
-
-  notify-failure:
-    needs: [run_dbt_jobs, run_dbt_jobs_fallback]
-    if: |
-      always() && (
-        (needs.run_dbt_jobs.result == 'failure' && needs.run_dbt_jobs.outputs.started == 'true') ||
-        needs.run_dbt_jobs_fallback.result == 'failure'
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send Slack notification
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{
-              \"text\": \"Failure in ${{ github.repository }}\",
-              \"attachments\": [{
-                \"color\": \"#f44336\",
-                \"fields\": [
-                  {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
-                  {\"title\": \"Workflow\", \"value\": \"${{ github.workflow }}\", \"short\": true}
-                ],
-                \"actions\": [{
-                  \"type\": \"button\",
-                  \"text\": \"View Workflow Run\",
-                  \"style\": \"primary\",
-                  \"url\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
-                }],
-                \"footer\": \"GitHub Actions\"
-              }]
-            }" \
-            "$SLACK_WEBHOOK_URL"
