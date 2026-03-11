@@ -80,15 +80,6 @@ jobs:
         run: |
           ${{ inputs.dbt_command }}
 
-      - name: Store logs
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dbt-logs
-          path: |
-            logs
-            target
-
   run_dbt_jobs_fallback:
     needs: [run_dbt_jobs]
     if: failure() && needs.run_dbt_jobs.outputs.started != 'true'
@@ -115,15 +106,6 @@ jobs:
       - name: Run DBT Jobs
         run: |
           ${{ inputs.dbt_command }}
-
-      - name: Store logs
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dbt-logs-fallback
-          path: |
-            logs
-            target
 
   notify-failure:
     needs: [run_dbt_jobs, run_dbt_jobs_fallback]
