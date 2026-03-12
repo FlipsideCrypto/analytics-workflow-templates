@@ -27,6 +27,11 @@ on:
         description: 'container image for self-hosted runner'
         required: false
         default: 'ghcr.io/catthehacker/ubuntu:act-latest'
+      warehouse:
+        type: string
+        description: 'override warehouse (defaults to vars.WAREHOUSE)'
+        required: false
+        default: ''
     secrets:
       GH_INTERNAL_TOKEN:
         required: true
@@ -46,7 +51,8 @@ env:
   PRIVATE_KEY: "${{ secrets.PRIVATE_KEY }}"
   REGION: "${{ vars.REGION }}"
   DATABASE: "${{ vars.DATABASE }}"
-  WAREHOUSE: "${{ vars.WAREHOUSE }}"
+  WAREHOUSE: "${{ inputs.warehouse || vars.WAREHOUSE }}"
+  SLACK_WEBHOOK_URL: "${{ secrets.SLACK_WEBHOOK_URL }}"
   SCHEMA: "${{ vars.SCHEMA }}"
 
 jobs:
