@@ -72,8 +72,29 @@ jobs:
         run: echo "started=true" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v3
+        id: checkout
+        continue-on-error: true
+
+      - name: Wait before checkout retry
+        if: steps.checkout.outcome == 'failure'
+        run: sleep 15
+
+      - uses: actions/checkout@v3
+        if: steps.checkout.outcome == 'failure'
 
       - uses: actions/setup-python@v4
+        id: setup-python
+        continue-on-error: true
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Wait before setup-python retry
+        if: steps.setup-python.outcome == 'failure'
+        run: sleep 15
+
+      - uses: actions/setup-python@v4
+        if: steps.setup-python.outcome == 'failure'
         with:
           python-version: "3.10"
           cache: "pip"
@@ -99,8 +120,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        id: checkout-fallback
+        continue-on-error: true
+
+      - name: Wait before checkout retry
+        if: steps.checkout-fallback.outcome == 'failure'
+        run: sleep 15
+
+      - uses: actions/checkout@v3
+        if: steps.checkout-fallback.outcome == 'failure'
 
       - uses: actions/setup-python@v4
+        id: setup-python-fallback
+        continue-on-error: true
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Wait before setup-python retry
+        if: steps.setup-python-fallback.outcome == 'failure'
+        run: sleep 15
+
+      - uses: actions/setup-python@v4
+        if: steps.setup-python-fallback.outcome == 'failure'
         with:
           python-version: "3.10"
           cache: "pip"
